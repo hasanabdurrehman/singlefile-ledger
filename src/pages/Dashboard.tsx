@@ -1,18 +1,20 @@
 import { useState, useEffect } from 'react';
-import { Plus, FileText, Calendar, Users, DollarSign, Search, LogOut } from 'lucide-react';
+import { Plus, FileText, Calendar, Users, DollarSign, Search, LogOut, FileText as QuotationIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { getInvoices } from '@/lib/db';
+import { getInvoices, getQuotations } from '@/lib/db';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import type { Invoice } from '@/types/invoice';
+import type { Quotation } from '@/types/quotation';
 
 const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { signOut } = useAuth();
   const { toast } = useToast();
@@ -34,15 +36,19 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    const loadInvoices = async () => {
+    const loadData = async () => {
       try {
-        const data = await getInvoices();
-        setInvoices(data);
+        const [invoicesData, quotationsData] = await Promise.all([
+          getInvoices(),
+          getQuotations()
+        ]);
+        setInvoices(invoicesData);
+        setQuotations(quotationsData);
       } catch (error) {
-        console.error('Error loading invoices:', error);
+        console.error('Error loading data:', error);
         toast({
           title: 'Error',
-          description: 'Failed to load invoices.',
+          description: 'Failed to load data.',
           variant: 'destructive',
         });
       } finally {
@@ -50,7 +56,7 @@ const Dashboard = () => {
       }
     };
 
-    loadInvoices();
+    loadData();
   }, []);
 
   const filteredInvoices = invoices.filter(invoice =>
@@ -83,6 +89,12 @@ const Dashboard = () => {
               <p className="text-primary-foreground/80">Manage your invoices efficiently</p>
             </div>
             <div className="flex gap-4">
+              <Link to="/quotations">
+                <Button variant="secondary" size="lg" className="gap-2">
+                  <QuotationIcon className="h-5 w-5" />
+                  Quotations
+                </Button>
+              </Link>
               <Link to="/create">
                 <Button variant="secondary" size="lg" className="gap-2">
                   <Plus className="h-5 w-5" />
@@ -100,7 +112,17 @@ const Dashboard = () => {
 
       <div className="container mx-auto px-6 py-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+          <Card className="card-hover">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Quotations</CardTitle>
+              <QuotationIcon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{quotations.length}</div>
+            </CardContent>
+          </Card>
+
           <Card className="card-hover">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Invoices</CardTitle>

@@ -128,6 +128,77 @@ export interface Database {
         }
         Update: Partial<Omit<Database['public']['Tables']['invoice_items']['Insert'], 'id'>>
       }
+      quotations: {
+        Row: {
+          id: string // UUID
+          quotation_number: string
+          date: string
+          expiry_date: string
+          status: 'draft' | 'sent' | 'accepted' | 'rejected' | 'converted'
+          client_name: string
+          client_contact: string
+          client_address: string
+          total: number // DECIMAL(12,2)
+          quotation_terms: string
+          terms_and_conditions: string
+          bank_account_details: string
+          created_at: string // TIMESTAMPTZ
+          updated_at: string // TIMESTAMPTZ
+        }
+        Insert: {
+          id?: string // UUID
+          quotation_number: string
+          date: string
+          expiry_date: string
+          status?: 'draft' | 'sent' | 'accepted' | 'rejected' | 'converted'
+          client_name: string
+          client_contact: string
+          client_address: string
+          total: number
+          quotation_terms: string
+          terms_and_conditions: string
+          bank_account_details: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          quotation_number?: string
+          date?: string
+          expiry_date?: string
+          status?: 'draft' | 'sent' | 'accepted' | 'rejected' | 'converted'
+          client_name?: string
+          client_contact?: string
+          client_address?: string
+          total?: number
+          quotation_terms?: string
+          terms_and_conditions?: string
+          bank_account_details?: string
+          updated_at?: string
+        }
+      }
+      quotation_items: {
+        Row: {
+          id: string // UUID
+          quotation_id: string // UUID foreign key
+          description: string
+          quantity: number // INTEGER
+          rate: number // DECIMAL(12,2)
+          amount: number // DECIMAL(12,2)
+          created_at: string // TIMESTAMPTZ
+          updated_at: string // TIMESTAMPTZ
+        }
+        Insert: {
+          id?: string // UUID
+          quotation_id: string
+          description: string
+          quantity: number
+          rate: number
+          amount: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: Partial<Omit<Database['public']['Tables']['quotation_items']['Insert'], 'id'>>
+      }
       company_info: {
         Row: {
           id: string // UUID

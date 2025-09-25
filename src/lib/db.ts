@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 import type { Database } from '@/types/database'
 import type { Invoice, InvoiceItem } from '@/types/invoice'
+import type { Quotation, QuotationItem } from '@/types/quotation'
 
 export async function getInvoices(): Promise<Invoice[]> {
   const { data: invoices, error: invoicesError } = await supabase
@@ -192,6 +193,215 @@ export async function deleteInvoice(id: string): Promise<void> {
   if (invoiceError) {
     throw invoiceError
   }
+}
+
+export async function getQuotations(): Promise<Quotation[]> {
+  const { data: quotations, error: quotationsError } = await supabase
+    .from('quotations')
+    .select(`
+      *,
+      quotation_items:quotation_items(*)
+    `)
+    .order('created_at', { ascending: false })
+
+  if (quotationsError) {
+    throw quotationsError
+  }
+
+  return quotations.map(quotation => ({
+    id: quotation.id,
+    quotationNumber: quotation.quotation_number,
+    date: quotation.date,
+    expiryDate: quotation.expiry_date,
+    status: quotation.status,
+    clientName: quotation.client_name,
+    clientContact: quotation.client_contact,
+    clientAddress: quotation.client_address,
+    items: quotation.quotation_items.map(item => ({
+      id: item.id,
+      description: item.description,
+      quantity: item.quantity,
+      rate: item.rate,
+      amount: item.amount,
+    })),
+    total: quotation.total,
+    quotationTerms: quotation.quotation_terms,
+    termsAndConditions: quotation.terms_and_conditions,
+    bankAccountDetails: quotation.bank_account_details,
+    createdAt: quotation.created_at,
+    updatedAt: quotation.updated_at,
+  }))
+}
+
+export async function getQuotationById(id: string): Promise<Quotation | null> {
+  const { data: quotation, error: quotationError } = await supabase
+    .from('quotations')
+    .select(`
+      *,
+      quotation_items:quotation_items(*)
+    `)
+    .eq('id', id)
+    .single()
+
+  if (quotationError) {
+    return null
+  }
+
+  return {
+    id: quotation.id,
+    quotationNumber: quotation.quotation_number,
+    date: quotation.date,
+    expiryDate: quotation.expiry_date,
+    status: quotation.status,
+    clientName: quotation.client_name,
+    clientContact: quotation.client_contact,
+    clientAddress: quotation.client_address,
+    items: quotation.quotation_items.map(item => ({
+      id: item.id,
+      description: item.description,
+      quantity: item.quantity,
+      rate: item.rate,
+      amount: item.amount,
+    })),
+    total: quotation.total,
+    quotationTerms: quotation.quotation_terms,
+    termsAndConditions: quotation.terms_and_conditions,
+    bankAccountDetails: quotation.bank_account_details,
+    createdAt: quotation.created_at,
+    updatedAt: quotation.updated_at,
+  }
+}
+
+export async function createQuotation(quotation: Omit<Quotation, 'id' | 'createdAt' | 'updatedAt'>): Promise<Quotation> {
+  const { data: newQuotation, error: quotationError } = await supabase
+    .from('quotations')
+    .insert({
+      quotation_number: quotation.quotationNumber,
+      date: quotation.date,
+      expiry_date: quotation.expiryDate,
+      status: quotation.status,
+      client_name: quotation.clientName,
+      client_contact: quotation.clientContact,
+      client_address: quotation.clientAddress,
+      total: quotation.total,
+      quotation_terms: quotation.quotationTerms,
+      terms_and_conditions: quotation.termsAndConditions,
+      bank_account_details: quotation.bankAccountDetails,
+    })
+    .select()
+    .single()
+
+  if (quotationError) {
+    throw quotationError
+  }
+
+  const { error: itemsError } = await supabase
+    .from('quotation_items')
+    .insert(
+      quotation.items.map(item => ({
+        quotation_id: newQuotation.id,
+        description: item.description,
+        quantity: item.quantity,
+        rate: item.rate,
+        amount: item.amount,
+      }))
+    )
+
+  if (itemsError) {
+    throw itemsError
+  }
+
+  return getQuotationById(newQuotation.id) as Promise<Quotation>
+}
+
+export async function updateQuotation(id: string, quotation: Omit<Quotation, 'id' | 'createdAt' | 'updatedAt'>): Promise<Quotation> {
+  const { error: quotationError } = await supabase
+    .from('quotations')
+    .update({
+      quotation_number: quotation.quotationNumber,
+      date: quotation.date,
+      expiry_date: quotation.expiryDate,
+      status: quotation.status,
+      client_name: quotation.clientName,
+      client_contact: quotation.clientContact,
+      client_address: quotation.clientAddress,
+      total: quotation.total,
+      quotation_terms: quotation.quotationTerms,
+      terms_and_conditions: quotation.termsAndConditions,
+      bank_account_details: quotation.bankAccountDetails,
+    })
+    .eq('id', id)
+
+  if (quotationError) {
+    throw quotationError
+  }
+
+  // Delete existing items
+  const { error: deleteError } = await supabase
+    .from('quotation_items')
+    .delete()
+    .eq('quotation_id', id)
+
+  if (deleteError) {
+    throw deleteError
+  }
+
+  // Insert new items
+  const { error: itemsError } = await supabase
+    .from('quotation_items')
+    .insert(
+      quotation.items.map(item => ({
+        quotation_id: id,
+        description: item.description,
+        quantity: item.quantity,
+        rate: item.rate,
+        amount: item.amount,
+      }))
+    )
+
+  if (itemsError) {
+    throw itemsError
+  }
+
+  return getQuotationById(id) as Promise<Quotation>
+}
+
+export async function deleteQuotation(id: string): Promise<void> {
+  // Delete items first due to foreign key constraint
+  const { error: itemsError } = await supabase
+    .from('quotation_items')
+    .delete()
+    .eq('quotation_id', id)
+
+  if (itemsError) {
+    throw itemsError
+  }
+
+  const { error: quotationError } = await supabase
+    .from('quotations')
+    .delete()
+    .eq('id', id)
+
+  if (quotationError) {
+    throw quotationError
+  }
+}
+
+export async function convertQuotationToInvoice(quotationId: string, invoiceData: Omit<Invoice, 'id' | 'createdAt' | 'updatedAt'>): Promise<Invoice> {
+  // First, create the invoice
+  const invoice = await createInvoice(invoiceData)
+
+  // Then update the quotation status to 'converted'
+  const { error: updateError } = await supabase
+    .from('quotations')
+    .update({ status: 'converted' })
+    .eq('id', quotationId)
+
+  if (updateError) {
+    throw updateError
+  }
+
+  return invoice
 }
 
 export async function getCompanyInfo() {

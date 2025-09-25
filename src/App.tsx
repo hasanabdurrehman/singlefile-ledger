@@ -6,6 +6,9 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import CreateEditInvoice from "./pages/CreateEditInvoice";
 import InvoiceDetail from "./pages/InvoiceDetail";
+import Quotations from "./pages/Quotations";
+import CreateEditQuotation from "./pages/CreateEditQuotation";
+import QuotationDetail from "./pages/QuotationDetail";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -74,6 +77,38 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <InvoiceDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/quotations"
+              element={
+                <ProtectedRoute>
+                  <Quotations />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/quotations/new"
+              element={
+                <ProtectedRoute>
+                  <CreateEditQuotation />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/quotations/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <CreateEditQuotation />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/quotations/:id"
+              element={
+                <ProtectedRoute>
+                  <QuotationDetail />
                 </ProtectedRoute>
               }
             />
