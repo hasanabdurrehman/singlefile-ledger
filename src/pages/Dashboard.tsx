@@ -1,17 +1,37 @@
 import { useState, useEffect } from 'react';
-import { Plus, FileText, Calendar, Users, DollarSign, Search } from 'lucide-react';
+import { Plus, FileText, Calendar, Users, DollarSign, Search, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { getInvoices } from '@/lib/db';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/lib/auth';
+import { useToast } from '@/hooks/use-toast';
 import type { Invoice } from '@/types/invoice';
 
 const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { signOut } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    try {
+      const { error } = await signOut();
+      if (error) throw error;
+      navigate('/login');
+    } catch (error) {
+      console.error('Error signing out:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to sign out.',
+        variant: 'destructive',
+      });
+    }
+  };
 
   useEffect(() => {
     const loadInvoices = async () => {
@@ -20,6 +40,11 @@ const Dashboard = () => {
         setInvoices(data);
       } catch (error) {
         console.error('Error loading invoices:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load invoices.',
+          variant: 'destructive',
+        });
       } finally {
         setIsLoading(false);
       }
@@ -57,12 +82,18 @@ const Dashboard = () => {
               <h1 className="text-3xl font-bold mb-2">Invoice Management</h1>
               <p className="text-primary-foreground/80">Manage your invoices efficiently</p>
             </div>
-            <Link to="/create">
-              <Button variant="secondary" size="lg" className="gap-2">
-                <Plus className="h-5 w-5" />
-                Create Invoice
+            <div className="flex gap-4">
+              <Link to="/create">
+                <Button variant="secondary" size="lg" className="gap-2">
+                  <Plus className="h-5 w-5" />
+                  Create Invoice
+                </Button>
+              </Link>
+              <Button variant="outline" size="lg" className="gap-2" onClick={handleSignOut}>
+                <LogOut className="h-5 w-5" />
+                Sign Out
               </Button>
-            </Link>
+            </div>
           </div>
         </div>
       </div>
