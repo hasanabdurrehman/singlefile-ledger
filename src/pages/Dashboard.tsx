@@ -1,23 +1,51 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, FileText, Calendar, Users, DollarSign, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { mockInvoices } from '@/data/mockInvoices';
+import { getInvoices } from '@/lib/db';
 import { Link } from 'react-router-dom';
+import type { Invoice } from '@/types/invoice';
 
 const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  
-  const filteredInvoices = mockInvoices.filter(invoice =>
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadInvoices = async () => {
+      try {
+        const data = await getInvoices();
+        setInvoices(data);
+      } catch (error) {
+        console.error('Error loading invoices:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadInvoices();
+  }, []);
+
+  const filteredInvoices = invoices.filter(invoice =>
     invoice.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const totalRevenue = mockInvoices.reduce((sum, invoice) => sum + invoice.total, 0);
-  const totalOutstanding = mockInvoices.reduce((sum, invoice) => sum + invoice.remainingBalance, 0);
+  const totalRevenue = invoices.reduce((sum, invoice) => sum + invoice.total, 0);
+  const totalOutstanding = invoices.reduce((sum, invoice) => sum + invoice.remainingBalance, 0);
   const totalPaid = totalRevenue - totalOutstanding;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-semibold mb-4">Loading...</h2>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -48,7 +76,7 @@ const Dashboard = () => {
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{mockInvoices.length}</div>
+              <div className="text-2xl font-bold">{invoices.length}</div>
             </CardContent>
           </Card>
 

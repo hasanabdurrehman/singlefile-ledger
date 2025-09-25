@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { mockInvoices, companyInfo } from '@/data/mockInvoices';
+import { getInvoiceById, createInvoice, updateInvoice, getInvoices } from '@/lib/db';
 import { Invoice, InvoiceItem } from '@/types/invoice';
 import { useToast } from '@/hooks/use-toast';
 
@@ -39,33 +39,47 @@ Project Handover: Project completion is confirmed upon the successful conclusion
   });
 
   useEffect(() => {
-    if (isEditing && id) {
-      const invoice = mockInvoices.find(inv => inv.id === id);
-      if (invoice) {
-        setFormData({
-          invoiceNumber: invoice.invoiceNumber,
-          date: invoice.date,
-          clientName: invoice.clientName,
-          clientContact: invoice.clientContact,
-          clientAddress: invoice.clientAddress,
-          items: invoice.items,
-          total: invoice.total,
-          advance: invoice.advance,
-          remainingBalance: invoice.remainingBalance,
-          paymentTerms: invoice.paymentTerms,
-          termsAndConditions: invoice.termsAndConditions,
-          bankAccountDetails: invoice.bankAccountDetails,
+    const loadInvoice = async () => {
+      try {
+        if (isEditing && id) {
+          const invoice = await getInvoiceById(id);
+          if (invoice) {
+            setFormData({
+              invoiceNumber: invoice.invoiceNumber,
+              date: invoice.date,
+              clientName: invoice.clientName,
+              clientContact: invoice.clientContact,
+              clientAddress: invoice.clientAddress,
+              items: invoice.items,
+              total: invoice.total,
+              advance: invoice.advance,
+              remainingBalance: invoice.remainingBalance,
+              paymentTerms: invoice.paymentTerms,
+              termsAndConditions: invoice.termsAndConditions,
+              bankAccountDetails: invoice.bankAccountDetails,
+            });
+          }
+        } else {
+          // Generate next invoice number for new invoice
+          const allInvoices = await getInvoices();
+          const lastInvoiceNumber = Math.max(...allInvoices.map(inv => parseInt(inv.invoiceNumber) || 0));
+          setFormData(prev => ({
+            ...prev,
+            invoiceNumber: String(lastInvoiceNumber + 1).padStart(4, '0'),
+          }));
+        }
+      } catch (error) {
+        console.error('Error loading invoice:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load invoice data',
+          variant: 'destructive',
         });
       }
-    } else {
-      // Generate next invoice number for new invoice
-      const lastInvoiceNumber = Math.max(...mockInvoices.map(inv => parseInt(inv.invoiceNumber) || 0));
-      setFormData(prev => ({
-        ...prev,
-        invoiceNumber: String(lastInvoiceNumber + 1).padStart(4, '0'),
-      }));
-    }
-  }, [isEditing, id]);
+    };
+
+    loadInvoice();
+  }, [isEditing, id, toast]);
 
   const updateItemAmount = (index: number, quantity: number, rate: number) => {
     const amount = quantity * rate;
@@ -121,7 +135,7 @@ Project Handover: Project completion is confirmed upon the successful conclusion
     }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.clientName || !formData.invoiceNumber) {
       toast({
         title: "Validation Error",
@@ -131,13 +145,27 @@ Project Handover: Project completion is confirmed upon the successful conclusion
       return;
     }
 
-    // In a real app, this would save to database
-    toast({
-      title: "Success",
-      description: `Invoice ${isEditing ? 'updated' : 'created'} successfully`,
-    });
-    
-    navigate('/');
+    try {
+      if (isEditing && id) {
+        await updateInvoice(id, formData);
+      } else {
+        await createInvoice(formData);
+      }
+
+      toast({
+        title: "Success",
+        description: `Invoice ${isEditing ? 'updated' : 'created'} successfully`,
+      });
+      
+      navigate('/');
+    } catch (error) {
+      console.error('Error saving invoice:', error);
+      toast({
+        title: "Error",
+        description: `Failed to ${isEditing ? 'update' : 'create'} invoice`,
+        variant: "destructive",
+      });
+    }
   };
 
   return (

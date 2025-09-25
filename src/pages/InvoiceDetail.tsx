@@ -2,16 +2,48 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Printer, Edit, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { mockInvoices, companyInfo } from '@/data/mockInvoices';
+import { getInvoiceById, getCompanyInfo } from '@/lib/db';
 import { Badge } from '@/components/ui/badge';
+import { useState, useEffect } from 'react';
+import type { Invoice } from '@/types/invoice';
+import type { Company } from '@/types/invoice';
 
 const InvoiceDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  
-  const invoice = mockInvoices.find(inv => inv.id === id);
-  
-  if (!invoice) {
+  const [invoice, setInvoice] = useState<Invoice | null>(null);
+  const [company, setCompany] = useState<Company | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadInvoice = async () => {
+      try {
+        if (!id) return;
+        const invoiceData = await getInvoiceById(id);
+        const companyData = await getCompanyInfo();
+        setInvoice(invoiceData);
+        setCompany(companyData);
+      } catch (error) {
+        console.error('Error loading invoice:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadInvoice();
+  }, [id]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Loading...</h1>
+        </div>
+      </div>
+    );
+  }
+
+  if (!invoice || !company) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -68,8 +100,8 @@ const InvoiceDetail = () => {
             {/* Header */}
             <div className="flex justify-between items-start mb-8">
               <div>
-                <h1 className="text-3xl font-bold text-primary mb-2">{companyInfo.name}</h1>
-                <p className="text-muted-foreground">{companyInfo.address}</p>
+                <h1 className="text-3xl font-bold text-primary mb-2">{company.name}</h1>
+                <p className="text-muted-foreground">{company.address}</p>
               </div>
               <div className="text-right">
                 <h2 className="text-2xl font-bold mb-2">Invoice</h2>
