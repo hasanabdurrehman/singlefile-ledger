@@ -42,7 +42,68 @@ export interface Database {
           created_at?: string
           updated_at?: string
         }
-        Update: Partial<Omit<Database['public']['Tables']['invoices']['Insert'], 'id'>>
+        Update: {
+          invoice_number?: string
+          date?: string
+          client_name?: string
+          client_contact?: string
+          client_address?: string
+          total?: number
+          advance?: number
+          remaining_balance?: number
+          payment_terms?: string
+          terms_and_conditions?: string
+          bank_account_details?: string
+          updated_at?: string
+        }
+      }
+      recurring_schedules: {
+        Row: {
+          id: string // UUID
+          invoice_id: string
+          start_date: string
+          end_date: string | null
+          interval: string
+          day_of_month: number | null
+          next_generation_date: string
+          status: string
+          last_generated_date: string | null
+          generated_count: number
+          max_occurrences: number | null
+          template_number: string
+          created_at: string // TIMESTAMPTZ
+          updated_at: string // TIMESTAMPTZ
+        }
+        Insert: {
+          id?: string
+          invoice_id: string
+          start_date: string
+          end_date?: string | null
+          interval: string
+          day_of_month?: number | null
+          next_generation_date: string
+          status?: string
+          last_generated_date?: string | null
+          generated_count?: number
+          max_occurrences?: number | null
+          template_number: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          invoice_id?: string
+          start_date?: string
+          end_date?: string | null
+          interval?: string
+          day_of_month?: number | null
+          next_generation_date?: string
+          status?: string
+          last_generated_date?: string | null
+          generated_count?: number
+          max_occurrences?: number | null
+          template_number?: string
+          updated_at?: string
+        }
       }
       invoice_items: {
         Row: {

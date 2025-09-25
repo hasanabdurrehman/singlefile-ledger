@@ -89,7 +89,7 @@ const Dashboard = () => {
                   Create Invoice
                 </Button>
               </Link>
-              <Button variant="outline" size="lg" className="gap-2" onClick={handleSignOut}>
+              <Button variant="secondary" size="lg" className="gap-2 bg-white text-primary hover:bg-yellow-500 hover:text-white transition-colors" onClick={handleSignOut}>
                 <LogOut className="h-5 w-5" />
                 Sign Out
               </Button>

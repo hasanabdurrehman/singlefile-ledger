@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Printer, Edit, Download } from 'lucide-react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { getInvoiceById, getCompanyInfo } from '@/lib/db';
@@ -59,7 +60,7 @@ const InvoiceDetail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background print:min-h-0 print:bg-white">
       {/* Action Bar - Hidden on print */}
       <div className="print:hidden bg-muted/50 border-b">
         <div className="container mx-auto px-6 py-4">
@@ -100,7 +101,13 @@ const InvoiceDetail = () => {
             {/* Header */}
             <div className="flex justify-between items-start mb-8">
               <div>
-                <h1 className="text-3xl font-bold text-primary mb-2">{company.name}</h1>
+                <h1 className="text-3xl font-bold text-primary mb-2">
+                  {company.name.split(' ').map((word, index, arr) => (
+                    index === arr.length - 1 
+                      ? <span key={index} className="text-yellow-500 print:text-yellow-600">{word}</span>
+                      : <span key={index}>{word + ' '}</span>
+                  ))}
+                </h1>
                 <p className="text-muted-foreground">{company.address}</p>
               </div>
               <div className="text-right">
@@ -193,7 +200,7 @@ const InvoiceDetail = () => {
             </div>
 
             {/* Footer */}
-            <div className="text-center pt-6 border-t text-sm text-muted-foreground">
+            <div className="text-center pt-4 border-t text-[10px] text-muted-foreground">
               <p>This is a system-generated document, no signature is required.</p>
             </div>
           </CardContent>
@@ -204,10 +211,25 @@ const InvoiceDetail = () => {
       <style dangerouslySetInnerHTML={{
         __html: `
           @media print {
-            body { 
+            @page {
               margin: 0;
+              size: A4;
+            }
+            
+            html, body { 
+              margin: 0;
+              padding: 0;
+              height: auto;
               background: white !important;
               color: black !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            
+            .print\\:text-yellow-600 {
+              color: #ca8a04 !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
             }
             
             .container {
@@ -239,7 +261,55 @@ const InvoiceDetail = () => {
             }
             
             .print\\:p-6 {
-              padding: 1.5rem !important;
+              padding: 1rem !important;
+            }
+
+            h1 {
+              font-size: 1.5rem !important;
+              margin-bottom: 0.5rem !important;
+            }
+
+            h2 {
+              font-size: 1.25rem !important;
+              margin-bottom: 0.5rem !important;
+            }
+
+            h3 {
+              font-size: 1rem !important;
+              margin-bottom: 0.25rem !important;
+            }
+
+            table {
+              font-size: 0.875rem !important;
+            }
+
+            .mb-8 {
+              margin-bottom: 0.75rem !important;
+            }
+
+            .mb-6 {
+              margin-bottom: 0.5rem !important;
+            }
+
+            .p-8 {
+              padding: 1rem !important;
+            }
+
+            .p-3 {
+              padding: 0.5rem !important;
+            }
+            
+            .space-y-1 > * + * {
+              margin-top: 0.15rem !important;
+            }
+            
+            .space-y-2 > * + * {
+              margin-top: 0.25rem !important;
+            }
+            
+            .leading-relaxed {
+              line-height: 1.4 !important;
+            }
             }
           }
         `
